@@ -27,6 +27,8 @@
 #import "UMSocialLineHandler.h"
 #import "UMSocialTumblrHandler.h"
 
+#import "EvernoteSDK.h"
+
 #define UMSYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
 
 @interface AppDelegate ()
@@ -37,6 +39,8 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    
+//==================友盟社交分享==========================
     //设置友盟社会化组件appkey
     [UMSocialData setAppKey:UmengAppkey];
     
@@ -65,11 +69,22 @@
     //使用友盟统计
     [MobClick startWithAppkey:UmengAppkey];
     
+    //========================系统自带分享=====================
+    
+    //配置印象笔记
+    //国际版用户
+    NSString *evernote_host=BootstrapServerBaseURLStringSandbox;
+    NSString *consumer_key=@"914813666";
+    NSString *consumer_secrt=@"65df36442843a938";
+    [EvernoteSession setSharedSessionHost:evernote_host
+                              consumerKey:consumer_key
+                           consumerSecret:consumer_secrt];
+    
     
     UIWindow *window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     window.backgroundColor = [UIColor whiteColor];
     ViewController *vc = [[ViewController alloc] init];
-    window.rootViewController = vc;
+    window.rootViewController = [[UINavigationController alloc] initWithRootViewController:vc];
     [window makeKeyAndVisible];
     self.window = window;
     return YES;
@@ -80,7 +95,14 @@
  */
 - (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation
 {
-    return  [UMSocialSnsService handleOpenURL:url wxApiDelegate:nil];
+    
+    BOOL canHandle=NO;
+    if ([[NSString stringWithFormat:@"en-%@",[[EvernoteSession sharedSession]consumerKey]]isEqualToString:[url scheme]]==YES) {
+        canHandle=[[EvernoteSession sharedSession]canHandleOpenURL:url];
+    }
+    NSLog(@"%d",canHandle);
+    [UMSocialSnsService handleOpenURL:url wxApiDelegate:nil];
+    return canHandle;
 }
 
 /**
